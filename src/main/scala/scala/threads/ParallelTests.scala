@@ -6,6 +6,7 @@ package scala.threads
 import collection._
 import java.util.concurrent.atomic._
 import java.util.concurrent.CyclicBarrier
+import com.tangosol.net.cache.LocalCache
 
 
 
@@ -83,6 +84,8 @@ object ParallelTests extends Test {
     val common_tlocal_cnt = new java.lang.ThreadLocal[java.util.concurrent.atomic.AtomicInteger] {
       override def initialValue = new AtomicInteger(0)
     }
+    
+    val localCache =  new LocalCache()
   }
   
   class WorkerThread(times: Times, settings: Settings) extends Thread {
@@ -120,6 +123,7 @@ object ParallelTests extends Test {
       case "currthread" => currthread
       case "threadlocal" => threadlocal
       case "common_threadlocal" => common_threadlocal()
+      case "localcache" => localcache()
       case _ => error("unknown test '" + name + "'")
     }
     
@@ -313,7 +317,21 @@ object ParallelTests extends Test {
       }
       if (i > until) println("thread local value was null " + i)
     }
-    
+
+    def localcache() {
+      import WorkerThread._
+
+      var i = 0
+      val until = totalwork / threadnum
+      while (i < until) {
+        val thread = Thread.currentThread
+        val value = localCache.get(thread)
+        if (value eq null) {
+          localCache.put(thread, value)
+        }
+        i += 1
+      }
+    }
   }
   
 }
